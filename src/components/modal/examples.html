@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mo Elements - Modal</title>
+  <style>
+      mo-modal [data-modal-wrapper] {
+          position: fixed;
+          top: 0;
+          left: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          width: 100vw;
+          height: 100vh;
+          z-index: 998;
+      }
+      mo-modal [data-modal-content] {
+          background-color: #fff;
+          position: relative;
+          top: 10%;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 999;
+          max-height: 50vh;
+          max-width: 90vw;
+          min-width: 60vw;
+          min-height: 30vh;
+          border: black 1px solid;
+          padding: 10px;
+          overflow: auto;
+      }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="../../index.html">Back</a>
+</nav>
+
+<h1>Modal</h1>
+<div>
+  <h2>Example 1: Content defined on HTML</h2>
+  <mo-modal>
+    <button data-opener>Open</button>
+    <template data-modal-content>
+      <h3>Example 1</h3>
+      <ul>
+        <li>Modal Content on HTML</li>
+        <li>Modal is open on page load</li>
+      </ul>
+    </template>
+  </mo-modal>
+</div>
+
+<div>
+  <h2>Example 2: Content defined on JS</h2>
+  <mo-modal id="example2">
+    <button data-opener disabled>Open</button>
+  </mo-modal>
+</div>
+
+<div>
+  <h2>Example 3: Closer button</h2>
+  <mo-modal data-disable-wrapper-click>
+    <button data-opener>Open</button>
+    <template data-modal-content>
+      <h3>Example 3</h3>
+      <ul>
+        <li>Modal with a closer button</li>
+        <li>wrapper click doesn't close the modal</li>
+      </ul>
+      <button data-closer>close</button>
+    </template>
+  </mo-modal>
+</div>
+
+<script type="module" src="example.js" defer></script>
+</body>
+</html>
