@@ -6,8 +6,8 @@ const modal2 = document.querySelector('#example2')
 modal2.addEventListener('open', ()=>console.log("modal 2 opened"))
 modal2.addEventListener('close', ()=>console.log("modal 2 closed"))
 // -- set content element
-const contentElm = document.createElement('div')
-contentElm.innerHTML = `
+const modalElm = document.createElement('div')
+modalElm.innerHTML = `
   <h3>Example 2</h3>
 `
-modal2.contentElm = contentElm
+modal2.modalElm = modalElm
