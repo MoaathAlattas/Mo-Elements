@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mo Elements - Modal</title>
   <style>
-      mo-modal [data-modal-wrapper] {
+      mo-modal [data-wrapper] {
           position: fixed;
           top: 0;
           left: 0;
@@ -14,7 +14,7 @@
           height: 100vh;
           z-index: 998;
       }
-      mo-modal [data-modal-content] {
+      mo-modal [data-modal] {
           background-color: #fff;
           position: relative;
           top: 10%;
@@ -41,7 +41,7 @@
   <h2>Example 1: Content defined on HTML</h2>
   <mo-modal data-state-isOpen="false">
     <button data-opener>Open</button>
-    <template data-modal-content>
+    <template data-modal>
       <h3>Example 1</h3>
       <ul>
         <li>Modal Content on HTML</li>
@@ -59,9 +59,9 @@
 
 <div>
   <h2>Example 3: Closer button</h2>
-  <mo-modal data-disable-wrapper-click>
+  <mo-modal data-wrapper-click>
     <button data-opener>Open</button>
-    <template data-modal-content>
+    <template data-modal>
       <h3>Example 3</h3>
       <ul>
         <li>Modal with a closer button</li>
@@ -69,6 +69,14 @@
       </ul>
       <button data-closer>close</button>
     </template>
+  </mo-modal>
+</div>
+
+<div>
+  <h2>Example 4: Content defined on other page</h2>
+  <mo-modal id="example4" data-url="./content_page.html">
+    <button data-opener disabled>Open</button>
+    <template data-loading>Loading!</template>
   </mo-modal>
 </div>
 
