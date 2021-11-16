@@ -31,6 +31,7 @@ class moModal extends BaseElement {
         this.openerElm?.removeAttribute('disabled')
         this.openerElm?.addEventListener('click', this.onOpenerClick)
         this.modalTemplate = this.qs(`[${MODAL_CONTENT}]`)
+        this.loadingElm = this.qs(`[${MODAL_LOADING}]`)
         if(this.state.isOpen && this.modalElm) { this.open() }
     }
 
@@ -97,15 +98,13 @@ class moModal extends BaseElement {
         return Boolean(this.hasAttribute(WRAPPER_CLICK) || false)
     }
     get loadingElm(){
+        let template = this._loadingElm
         if(!this._loadingElm){
-            this._loadingElm = this.qs(`[${MODAL_LOADING}]`)
-            // throw an error if no content defined
-            if (!this._loadingElm){
-                return "Loading..."
-            }
+            template = document.createElement('template')
+            template.innerHTML = "Loading..."
         }
         
-        return this._loadingElm.content.cloneNode(true)
+        return template.content.cloneNode(true)
     }
 
     // setters
