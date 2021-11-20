@@ -3,26 +3,42 @@ import {BaseElement, html} from "../../lib/base_element.js"
 const INITIAL_STATE = {
     data: [
         ["Company", "Contact", "Country"],
-        ["Centro comercial Moctezuma", "Francisco Chang", "Mexico"],
-        ["Alfreds Futterkiste", "Maria Anders", "Germany"],
+        ["Centro comercial", "Chang", "Mexico"],
+        ["Alfreds Futterkiste", "Anders", "Germany"],
     ],
     options: {
         headerCol: false,
         headerRow: false,
+    },
+    actions: {
+        show: false,
+        rowIndex:0,
+        colIndex:0
     }
 }
 
-function createTable(arr){
+function actionButtons(){
     return html`
-        <table>
+        <button data-action="rd">row delete</button>
+        <button data-action="rb">row before</button>
+        <button data-action="ra">row after</button>
+        <br />
+        <button data-action="cd">col delete</button>
+        <button data-action="cb">col before</button>
+        <button data-action="ca">col after</button>
+    `
+}
+function createRows(arr){
+    return html`
           ${arr.map((rows)=>html`
             <tr>
                 ${rows.map(col=>html`
-                  <td>${col}</td>
+                  <td>
+                    ${col}
+                  </td>
                 `)}
             </tr>
           `)}
-        </table>
     `
 }
 
@@ -40,7 +56,6 @@ function removeAt(arr, i){
 function insertColAt(arr, elm, i){
     return arr.map(row=> insertAt(row, elm, i))
 }
-
 function removeColAt(arr, i){
     return arr.map(row=> removeAt(row, i))
 }
@@ -69,7 +84,13 @@ class DynaTable extends BaseElement {
           </div>
           <br />
           <div>
-            ${createTable(this.state.data)}
+            <table onclick="${this.onTableClick}">
+              ${createRows(this.state.data)}
+            </table>
+          </div>
+          <br />
+          <div onclick="${this.onTdActionClick}">
+            ${(this.state.actions.show)? actionButtons():null}
           </div>
         `
     }
@@ -92,11 +113,11 @@ class DynaTable extends BaseElement {
     }
 
     onAddColStart = (e) =>{
-        const data = insertColAt(this.state.data, "col", 0)
+        const data = insertColAt(this.state.data, this.newCol(), 0)
         this.setState({ data: data })
     }
     onAddColEnd = (e) =>{
-        const data = insertColAt(this.state.data, "col", this.colCount)
+        const data = insertColAt(this.state.data, this.newCol(), this.colCount)
         this.setState({ data: data })
     }
     onRemoveColStart = (e) =>{
@@ -106,6 +127,61 @@ class DynaTable extends BaseElement {
     onRemoveColEnd = (e) =>{
         const data = removeColAt(this.state.data, this.colCount-1)
         this.setState({ data: data })
+    }
+
+    onTableClick = (e) => {
+        const {target} = e
+        const isTd = target instanceof HTMLTableCellElement
+
+        if(isTd){ this.onTdClick(e) }
+    }
+    onTdClick = (e) => {
+        const {target} = e
+        const tr = target.closest('tr')
+        this.setState({actions: {
+            ...this.state.actions,
+            show: !this.state.actions.show,
+            rowIndex: tr.rowIndex,
+            colIndex: target.cellIndex,
+        }})
+    }
+    onTdActionClick = (e) =>{
+        const {target} = e
+
+        const isActionButton = target.hasAttribute('data-action')
+
+        if(isActionButton){
+            const {rowIndex, colIndex} = this.state.actions
+            let data = []
+            switch (target.dataset.action) {
+                case 'rd':
+                    data = removeAt(this.state.data, rowIndex)
+                    break
+                case 'rb':
+                    data = insertAt(this.state.data, this.newRow(), rowIndex)
+                    break
+                case 'ra':
+                    data = insertAt(this.state.data, this.newRow(), rowIndex+1)
+                    break
+
+                case 'cd':
+                    data = removeColAt(this.state.data, colIndex)
+                    break
+                case 'cb':
+                    data = insertColAt(this.state.data, this.newCol(), colIndex)
+                    break
+                case 'ca':
+                    data = insertColAt(this.state.data, this.newCol(), colIndex+1)
+                    break
+            }
+            this.setState({
+                data: data,
+                actions: {
+                    ...this.state.actions,
+                    show: false
+                }
+            })
+        }
     }
 
     get colCount(){
@@ -118,8 +194,11 @@ class DynaTable extends BaseElement {
     newRow(){
         return Array.from(
             {length: this.colCount},
-            _ => "row"
+            _ => ""
         )
+    }
+    newCol(){
+        return ""
     }
 }
 
