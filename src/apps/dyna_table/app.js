@@ -12,10 +12,10 @@ const INITIAL_STATE = {
     }
 }
 
-function createTable(data){
+function createTable(arr){
     return html`
         <table>
-          ${data.map((rows)=>html`
+          ${arr.map((rows)=>html`
             <tr>
                 ${rows.map(col=>html`
                   <td>${col}</td>
@@ -24,6 +24,25 @@ function createTable(data){
           `)}
         </table>
     `
+}
+
+function insertAt(arr, elm, i){
+    const _arr = [...arr]
+    _arr.splice( i, 0, elm)
+    return _arr
+}
+function removeAt(arr, i){
+    const _arr = [...arr]
+    _arr.splice(i, 1)
+    return _arr
+}
+
+function insertColAt(arr, elm, i){
+    return arr.map(row=> insertAt(row, elm, i))
+}
+
+function removeColAt(arr, i){
+    return arr.map(row=> removeAt(row, i))
 }
 
 class DynaTable extends BaseElement {
@@ -37,57 +56,56 @@ class DynaTable extends BaseElement {
     render(){
         return html`
           <div>
-            <button onclick=${this.onAddRow}>Add Row</button>
-            <button onclick=${this.onRemoveRow}>Remove Row</button>
-            ${' '}
-            <button onclick=${this.onAddCol}>Add Col</button>
-            <button onclick=${this.onRemoveCol}>Remove Col</button>
+            <button onclick=${this.onAddRowStart}>Add Row (Start)</button>
+            <button onclick=${this.onRemoveRowStart}>Remove Row (Start)</button>
+            <button onclick=${this.onAddColStart}>Add Col (Start)</button>
+            <button onclick=${this.onRemoveColStart}>Remove Col (Start)</button>
           </div>
+          <div>
+            <button onclick=${this.onAddRowEnd}>Add Row (End)</button>
+            <button onclick=${this.onRemoveRowEnd}>Remove Row (End)</button>
+            <button onclick=${this.onAddColEnd}>Add Col (End)</button>
+            <button onclick=${this.onRemoveColEnd}>Remove Col (End)</button>
+          </div>
+          <br />
           <div>
             ${createTable(this.state.data)}
           </div>
-          
         `
     }
 
-    onAddCol = (e) =>{
-        const withNewCols = this.state.data
-            .map((row,_,arr)=> {
-                row.push("col")
-                return row
-        })
-
-        this.setState({
-            data: withNewCols
-        })
+    onAddRowStart = (e) =>{
+        const data = insertAt(this.state.data, this.newRow(), 0)
+        this.setState({data: data})
     }
-    onAddRow = (e) =>{
-        const withNewRows = Array.from(
-            {length: this.colCount},
-            _ => "row"
-        )
-
-        this.setState({
-            data: [...this.state.data, withNewRows]
-        })
+    onAddRowEnd =  (e) =>{
+        const data = insertAt(this.state.data, this.newRow(), this.rowCount)
+        this.setState({data: data})
     }
-    onRemoveCol = (e) =>{
-        const withRemovedCols = this.state.data
-            .map((row,_,arr)=> {
-                row.pop()
-                return row
-            })
-
-        this.setState({
-            data: withRemovedCols
-        })
+    onRemoveRowStart = (e) =>{
+        const data = removeAt(this.state.data, 0)
+        this.setState({data: data})
     }
-    onRemoveRow = (e) =>{
-        const withRemovedRows = this.state.data.slice(0,-1)
+    onRemoveRowEnd = (e) =>{
+        const data = removeAt(this.state.data, this.rowCount-1)
+        this.setState({data: data})
+    }
 
-        this.setState({
-            data: withRemovedRows
-        })
+    onAddColStart = (e) =>{
+        const data = insertColAt(this.state.data, "col", 0)
+        this.setState({ data: data })
+    }
+    onAddColEnd = (e) =>{
+        const data = insertColAt(this.state.data, "col", this.colCount)
+        this.setState({ data: data })
+    }
+    onRemoveColStart = (e) =>{
+        const data = removeColAt(this.state.data, 0)
+        this.setState({ data: data })
+    }
+    onRemoveColEnd = (e) =>{
+        const data = removeColAt(this.state.data, this.colCount-1)
+        this.setState({ data: data })
     }
 
     get colCount(){
@@ -95,6 +113,13 @@ class DynaTable extends BaseElement {
     }
     get rowCount(){
         return this.state.data.length
+    }
+
+    newRow(){
+        return Array.from(
+            {length: this.colCount},
+            _ => "row"
+        )
     }
 }
 
