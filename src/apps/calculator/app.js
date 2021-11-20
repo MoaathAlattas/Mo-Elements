@@ -44,7 +44,7 @@ class Calculator extends BaseElement {
     render(){
         const  numButtons = [0, 1,2,3,4,5,6,7,8,9, '.'].map(num=>{
             return html`<button value=${num} onclick=${this.onButtonClick}>${num}</button> `
-         })
+        })
         const opButtons = ['+','-','*','/'].map(op=>{
             return html`<button value=${op} onclick=${this.onButtonClick}>${op}</button>`
         })
