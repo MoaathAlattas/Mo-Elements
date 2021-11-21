@@ -11,6 +11,12 @@ class BaseElement extends HTMLElement {
         this.state = {}
     }
 
+    connectedCallback(){
+        if (this.render){
+            this._rerender()
+        }
+    }
+
     setState(state){
         Object.assign(this.state, state)
         this._rerender()
@@ -18,10 +24,6 @@ class BaseElement extends HTMLElement {
 
     _rerender(){
         render(this, this.render())
-    }
-
-    render(){
-        return this.innerHTML
     }
 }
 

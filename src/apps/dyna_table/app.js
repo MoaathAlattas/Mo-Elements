@@ -6,34 +6,21 @@ const INITIAL_STATE = {
         ["Centro comercial", "Chang", "Mexico"],
         ["Alfreds Futterkiste", "Anders", "Germany"],
     ],
-    options: {
-        headerCol: false,
-        headerRow: false,
+    showActions: false,
+    selectedCell: {
+        row: null,
+        col: null
     },
-    actions: {
-        show: false,
-        rowIndex:0,
-        colIndex:0
-    }
+    headerCol: false,
+    headerRow: false,
 }
 
-function actionButtons(){
-    return html`
-        <button data-action="rd">row delete</button>
-        <button data-action="rb">row before</button>
-        <button data-action="ra">row after</button>
-        <br />
-        <button data-action="cd">col delete</button>
-        <button data-action="cb">col before</button>
-        <button data-action="ca">col after</button>
-    `
-}
 function createRows(arr){
     return html`
           ${arr.map((rows)=>html`
             <tr>
                 ${rows.map(col=>html`
-                  <td>
+                  <td contenteditable="true">
                     ${col}
                   </td>
                 `)}
@@ -41,7 +28,6 @@ function createRows(arr){
           `)}
     `
 }
-
 function insertAt(arr, elm, i){
     const _arr = [...arr]
     _arr.splice( i, 0, elm)
@@ -52,153 +38,116 @@ function removeAt(arr, i){
     _arr.splice(i, 1)
     return _arr
 }
-
 function insertColAt(arr, elm, i){
     return arr.map(row=> insertAt(row, elm, i))
 }
 function removeColAt(arr, i){
     return arr.map(row=> removeAt(row, i))
 }
+function newEmptyRow(data){
+    return Array.from(
+        {length: data[0].length},
+        _ => ""
+    )
+}
+function colCount(data){
+    return data[0].length
+}
+function rowCount(data){
+    return data.length
+}
+function applyDataAction(data, selectedCell, actionType){
+    switch (actionType) {
+        case "add-row-before":
+            return insertAt(data, newEmptyRow(data), selectedCell.row)
+        case "add-row-after":
+            return insertAt(data, newEmptyRow(data), selectedCell.row+1)
+        case "remove-row":
+            return rowCount(data) > 1? removeAt(data, selectedCell.row): data
+        case "add-col-before":
+            return insertColAt(data, "", selectedCell.col)
+        case "add-col-after":
+            return insertColAt(data, "", selectedCell.col+1)
+        case "remove-col":
+            return colCount(data) > 1? removeColAt(data, selectedCell.col): data
+    }
+}
 
 class DynaTable extends BaseElement {
     constructor() {
         super()
         this.state = {...INITIAL_STATE}
-    }
-    connectedCallback() {
-        this._rerender()
+        document.addEventListener('click', this.onDocClick)
     }
     render(){
+        const {data, showActions} = this.state
+        console.log()
         return html`
+            ${(showActions)? html`
+              <div onclick="${this.onDataActionClick}">
+                <button data-action="remove-row">row remove</button>
+                <button data-action="add-row-before">row before</button>
+                <button data-action="add-row-after">row after</button>
+                <br />
+                <button data-action="remove-col">col remove</button>
+                <button data-action="add-col-before">col before</button>
+                <button data-action="add-col-after">col after</button>
+              </div>
+            `:null}
+            <br />
           <div>
-            <button onclick=${this.onAddRowStart}>Add Row (Start)</button>
-            <button onclick=${this.onRemoveRowStart}>Remove Row (Start)</button>
-            <button onclick=${this.onAddColStart}>Add Col (Start)</button>
-            <button onclick=${this.onRemoveColStart}>Remove Col (Start)</button>
-          </div>
-          <div>
-            <button onclick=${this.onAddRowEnd}>Add Row (End)</button>
-            <button onclick=${this.onRemoveRowEnd}>Remove Row (End)</button>
-            <button onclick=${this.onAddColEnd}>Add Col (End)</button>
-            <button onclick=${this.onRemoveColEnd}>Remove Col (End)</button>
-          </div>
-          <br />
-          <div>
-            <table onclick="${this.onTableClick}">
-              ${createRows(this.state.data)}
+            <table  style="display: inline-table"
+                    onclick="${this.onTableClick}">
+              ${createRows(data)}
             </table>
-          </div>
-          <br />
-          <div onclick="${this.onTdActionClick}">
-            ${(this.state.actions.show)? actionButtons():null}
           </div>
         `
     }
 
-    onAddRowStart = (e) =>{
-        const data = insertAt(this.state.data, this.newRow(), 0)
-        this.setState({data: data})
+    onDocClick = (e) =>{
+        const eventPath = e.composedPath()
+        const outsideTableBoundary = !(eventPath.includes(this.table))
+        if (outsideTableBoundary) { this.onOutsideTableClick(e)}
     }
-    onAddRowEnd =  (e) =>{
-        const data = insertAt(this.state.data, this.newRow(), this.rowCount)
-        this.setState({data: data})
+    onOutsideTableClick = () =>{
+        this.setState({
+            showActions: false,
+            selectedCell: {
+                row: null,
+                col: null
+            }
+        })
     }
-    onRemoveRowStart = (e) =>{
-        const data = removeAt(this.state.data, 0)
-        this.setState({data: data})
-    }
-    onRemoveRowEnd = (e) =>{
-        const data = removeAt(this.state.data, this.rowCount-1)
-        this.setState({data: data})
-    }
-
-    onAddColStart = (e) =>{
-        const data = insertColAt(this.state.data, this.newCol(), 0)
-        this.setState({ data: data })
-    }
-    onAddColEnd = (e) =>{
-        const data = insertColAt(this.state.data, this.newCol(), this.colCount)
-        this.setState({ data: data })
-    }
-    onRemoveColStart = (e) =>{
-        const data = removeColAt(this.state.data, 0)
-        this.setState({ data: data })
-    }
-    onRemoveColEnd = (e) =>{
-        const data = removeColAt(this.state.data, this.colCount-1)
-        this.setState({ data: data })
-    }
-
     onTableClick = (e) => {
-        const {target} = e
-        const isTd = target instanceof HTMLTableCellElement
-
-        if(isTd){ this.onTdClick(e) }
+        const withinTdBoundary = e.target instanceof HTMLTableCellElement
+        if(withinTdBoundary){ this.onTdClick(e) }
     }
     onTdClick = (e) => {
         const {target} = e
+        const {selectedCell} = this.state
         const tr = target.closest('tr')
-        this.setState({actions: {
-            ...this.state.actions,
-            show: !this.state.actions.show,
-            rowIndex: tr.rowIndex,
-            colIndex: target.cellIndex,
-        }})
-    }
-    onTdActionClick = (e) =>{
-        const {target} = e
-
-        const isActionButton = target.hasAttribute('data-action')
-
-        if(isActionButton){
-            const {rowIndex, colIndex} = this.state.actions
-            let data = []
-            switch (target.dataset.action) {
-                case 'rd':
-                    data = removeAt(this.state.data, rowIndex)
-                    break
-                case 'rb':
-                    data = insertAt(this.state.data, this.newRow(), rowIndex)
-                    break
-                case 'ra':
-                    data = insertAt(this.state.data, this.newRow(), rowIndex+1)
-                    break
-
-                case 'cd':
-                    data = removeColAt(this.state.data, colIndex)
-                    break
-                case 'cb':
-                    data = insertColAt(this.state.data, this.newCol(), colIndex)
-                    break
-                case 'ca':
-                    data = insertColAt(this.state.data, this.newCol(), colIndex+1)
-                    break
+        this.setState({
+            showActions: true,
+            selectedCell: {
+                ...selectedCell,
+                row: tr.rowIndex,
+                col: target.cellIndex,
             }
-            this.setState({
-                data: data,
-                actions: {
-                    ...this.state.actions,
-                    show: false
-                }
-            })
+        })
+    }
+    onDataActionClick = (e) =>{
+        e.stopPropagation()
+        const {target} = e
+        const actionType = target.getAttribute('data-action')
+        if(actionType){
+            const {data, selectedCell} = this.state
+            const _data = applyDataAction(data, selectedCell, actionType)
+            this.setState({ data: _data })
         }
     }
 
-    get colCount(){
-        return this.state.data[0].length
-    }
-    get rowCount(){
-        return this.state.data.length
-    }
-
-    newRow(){
-        return Array.from(
-            {length: this.colCount},
-            _ => ""
-        )
-    }
-    newCol(){
-        return ""
+    get table(){
+        return this.qs('table')
     }
 }
 
