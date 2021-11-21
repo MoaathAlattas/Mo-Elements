@@ -3,8 +3,8 @@ import {BaseElement, html} from "../../lib/base_element.js"
 const INITIAL_STATE = {
     data: [
         ["Company", "Contact", "Country"],
-        ["Centro comercial", "Chang", "Mexico"],
-        ["Alfreds Futterkiste", "Anders", "Germany"],
+        ["Name 1", "Chang", "Mexico"],
+        ["Name 2", "Anders", "Germany"],
     ],
     showActions: false,
     selectedCell: {
@@ -13,20 +13,6 @@ const INITIAL_STATE = {
     },
     headerCol: false,
     headerRow: false,
-}
-
-function createRows(arr){
-    return html`
-          ${arr.map((rows)=>html`
-            <tr>
-                ${rows.map(col=>html`
-                  <td contenteditable="true">
-                    ${col}
-                  </td>
-                `)}
-            </tr>
-          `)}
-    `
 }
 function insertAt(arr, elm, i){
     const _arr = [...arr]
@@ -50,12 +36,6 @@ function newEmptyRow(data){
         _ => ""
     )
 }
-function colCount(data){
-    return data[0].length
-}
-function rowCount(data){
-    return data.length
-}
 function applyDataAction(data, selectedCell, actionType){
     switch (actionType) {
         case "add-row-before":
@@ -63,13 +43,17 @@ function applyDataAction(data, selectedCell, actionType){
         case "add-row-after":
             return insertAt(data, newEmptyRow(data), selectedCell.row+1)
         case "remove-row":
-            return rowCount(data) > 1? removeAt(data, selectedCell.row): data
+            return (data.length > 1)
+                ? removeAt(data, selectedCell.row)
+                : data
         case "add-col-before":
             return insertColAt(data, "", selectedCell.col)
         case "add-col-after":
             return insertColAt(data, "", selectedCell.col+1)
         case "remove-col":
-            return colCount(data) > 1? removeColAt(data, selectedCell.col): data
+            return (data[0].length > 1)
+                ? removeColAt(data, selectedCell.col)
+                : data
     }
 }
 
@@ -80,25 +64,40 @@ class DynaTable extends BaseElement {
         document.addEventListener('click', this.onDocClick)
     }
     render(){
-        const {data, showActions} = this.state
-        console.log()
+        const {data, showActions, headerRow, headerCol} = this.state
         return html`
-            ${(showActions)? html`
+          <div onclick="${this.onTableConfigClick}">
+              <button value="header-row">Header Row?</button>
+              <button value="header-col">Header Col?</button>
+            </div>
+          <br />
+          ${(showActions)? html`
               <div onclick="${this.onDataActionClick}">
-                <button data-action="remove-row">row remove</button>
-                <button data-action="add-row-before">row before</button>
-                <button data-action="add-row-after">row after</button>
+                <button value="remove-row" 
+                        disabled="${!this.canDeleteRow()||null}">remove selected row</button>
+                <button value="add-row-before">add row before</button>
+                <button value="add-row-after">add row after</button>
                 <br />
-                <button data-action="remove-col">col remove</button>
-                <button data-action="add-col-before">col before</button>
-                <button data-action="add-col-after">col after</button>
+                <button value="remove-col"
+                        disabled="${!this.canDeleteCol()||null}">remove selected col</button>
+                <button value="add-col-before">add col before</button>
+                <button value="add-col-after">add col after</button>
               </div>
             `:null}
-            <br />
+          <br />
           <div>
-            <table  style="display: inline-table"
-                    onclick="${this.onTableClick}">
-              ${createRows(data)}
+            <table style="display: inline-table"
+                   onclick="${this.onTableClick}">
+              ${data.map((rows, ri)=>html`
+                <tr class="${(ri===0 && headerRow)?'header':null}">
+                    ${rows.map((col, ci)=>html`
+                      <td contenteditable="true"
+                          class="${(ci===0 && headerCol)?'header':null}">
+                        ${col}
+                      </td>
+                    `)}
+                </tr>
+              `)}
             </table>
           </div>
         `
@@ -135,19 +134,38 @@ class DynaTable extends BaseElement {
             }
         })
     }
-    onDataActionClick = (e) =>{
-        e.stopPropagation()
+    onTableConfigClick = (e) =>{
         const {target} = e
-        const actionType = target.getAttribute('data-action')
-        if(actionType){
+        const configName = target.value
+        if(configName){
+            switch (configName) {
+                case "header-row":
+                    this.setState({ headerRow: !this.state.headerRow })
+                    break;
+                case "header-col":
+                    this.setState({ headerCol: !this.state.headerCol })
+                    break;
+            }
+        }
+    }
+    onDataActionClick = (e) =>{
+        const actionName = e.target.value
+        if(actionName){
             const {data, selectedCell} = this.state
-            const _data = applyDataAction(data, selectedCell, actionType)
+            const _data = applyDataAction(data, selectedCell, actionName)
             this.setState({ data: _data })
         }
     }
 
     get table(){
-        return this.qs('table')
+        return this.querySelector('table')
+    }
+
+    canDeleteRow(){
+        return this.state.data.length > 1
+    }
+    canDeleteCol(){
+        return this.state.data[0].length > 1
     }
 }
 
