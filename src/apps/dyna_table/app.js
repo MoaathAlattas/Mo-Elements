@@ -15,7 +15,17 @@ const INITIAL_STATE = {
     headerRow: false,
     showTableActions: false,
     tableWidth: 0,
-    tableHeight: 0
+    tableHeight: 0,
+    expander:{
+        hold: false,
+        x:0,
+        y:0,
+        xStart: 0,
+        xEnd: 0,
+        yStart: 0,
+        yEnd: 0,
+
+    }
 }
 function insertAt(arr, elm, i){
     const _arr = [...arr]
@@ -73,7 +83,13 @@ class DynaTable extends BaseElement {
         this.addEventListener('mouseleave', this.onTableHover)
     }
     connectedCallback() {
-        super.connectedCallback()
+        super.connectedCallback();
+        ['mousemove', 'mouseup', 'mousedown'].forEach(eName=>{
+            this.addEventListener(eName, this.onTableExpand)
+            this.addEventListener(eName, this.onTableExpand)
+            this.addEventListener(eName, this.onTableExpand)
+        })
+
         this.setState({
             tableWidth: this.table.clientWidth,
             tableHeight: this.table.clientHeight,
@@ -91,7 +107,6 @@ class DynaTable extends BaseElement {
               <button value="header-row">Header Row?</button>
               <button value="header-col">Header Col?</button>
             </div>
-          <br />
           <div>
             <div style="float:left">
               <table style="display: inline-table"
@@ -112,6 +127,7 @@ class DynaTable extends BaseElement {
                  style="${`float:left;opacity: ${showTableActions? 1:0};transition: opacity .3s ease-in-out;`}">
               <button value="add-col-end"
                       style="${`height: ${tableHeight}px`}">+</button>
+              <button id="expand">Expand</button>
             </div>
           </div>
           <div style="clear: both"></div>
@@ -120,7 +136,6 @@ class DynaTable extends BaseElement {
             <button value="add-row-end" 
                     style="${`width: ${tableWidth}px`}">+</button>
           </div>
-          <br />
           ${(showCellActions)? html`
               <div onclick="${this.onDataActionClick}">
                 <button value="remove-row" 
@@ -137,6 +152,64 @@ class DynaTable extends BaseElement {
         `
     }
 
+    onTableExpand = (e) =>{
+        const isExpandBtn = e.target.id === 'expand'
+        const {data, expander} = this.state
+        if(e.type === 'mousedown' && isExpandBtn) {
+            this.setState({
+                expander: {
+                    ...expander,
+                    hold: true,
+                    xStart: e.pageX,
+                    yStart: e.pageY,
+                }
+            })
+        } else if(e.type === 'mouseup'){
+            this.setState({
+                expander: {
+                    ...expander,
+                    hold: false,
+                    xEnd: e.pageX,
+                    yEnd: e.pageY
+                }
+            })
+            this.dispatchEvent(new CustomEvent('endExpanding'))
+        } else if(e.type === 'mousemove'){
+            if(expander.hold){
+                let _data = data
+                const shouldAddCol = (
+                    e.pageX >= expander.xStart+15 && expander.xStart+25 <= e.pageX
+                )
+                const shouldAddRow = (
+                    e.pageY >= expander.yStart+15 && expander.yStart+25 <= e.pageY
+                )
+                if(shouldAddCol){
+                    _data = applyDataAction(data, null, 'add-col-end')
+                    this.setState({
+                        data: _data,
+                        expander: {
+                            ...expander,
+                            xStart: e.pageX,
+                        }
+                    })
+                }
+                if(shouldAddRow) {
+                    _data = applyDataAction(data, null, 'add-row-end')
+                    this.setState({
+                        data: _data,
+                        expander: {
+                            ...expander,
+                            yStart: e.pageY,
+                        }
+                    })
+                }
+                this.setState({
+                    tableWidth: this.table.clientWidth,
+                    tableHeight: this.table.clientHeight,
+                })
+            }
+        }
+    }
     onDocClick = (e) =>{
         const eventPath = e.composedPath()
         const outsideTableBoundary = !(eventPath.includes(this.table))
