@@ -4,15 +4,27 @@
   <meta charset="UTF-8">
   <title>Dynamic Table</title>
   <style>
-    td{
-        border: #000 solid 1px;
+      dyna-table table{
+          border-collapse: collapse;
+      }
+      dyna-table table, dyna-table th, dyna-table td{
+          border-spacing: 0;
+          border: gray 1px solid;
+      }
+      dyna-table td{
         padding: 10px;
     }
-    td:focus {
+      dyna-table td:focus {
         background-color: lightcyan;
     }
-    .header{
+      dyna-table .header{
         background-color: lightgray;
+    }
+      dyna-table .add-row{
+        content: "+";
+        display: inline-block;
+        background-color: lightgray;
+        float: right;
     }
   </style>
 </head>

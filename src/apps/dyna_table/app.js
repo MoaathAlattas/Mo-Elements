@@ -6,13 +6,16 @@ const INITIAL_STATE = {
         ["Name 1", "Chang", "Mexico"],
         ["Name 2", "Anders", "Germany"],
     ],
-    showActions: false,
+    showCellActions: false,
     selectedCell: {
         row: null,
         col: null
     },
     headerCol: false,
     headerRow: false,
+    showTableActions: false,
+    tableWidth: 0,
+    tableHeight: 0
 }
 function insertAt(arr, elm, i){
     const _arr = [...arr]
@@ -38,6 +41,8 @@ function newEmptyRow(data){
 }
 function applyDataAction(data, selectedCell, actionType){
     switch (actionType) {
+        case "add-row-end":
+            return insertAt(data, newEmptyRow(data), data.length)
         case "add-row-before":
             return insertAt(data, newEmptyRow(data), selectedCell.row)
         case "add-row-after":
@@ -46,6 +51,8 @@ function applyDataAction(data, selectedCell, actionType){
             return (data.length > 1)
                 ? removeAt(data, selectedCell.row)
                 : data
+        case "add-col-end":
+            return insertColAt(data, "", data[0].length)
         case "add-col-before":
             return insertColAt(data, "", selectedCell.col)
         case "add-col-after":
@@ -62,16 +69,59 @@ class DynaTable extends BaseElement {
         super()
         this.state = {...INITIAL_STATE}
         document.addEventListener('click', this.onDocClick)
+        this.addEventListener('mouseenter', this.onTableHover)
+        this.addEventListener('mouseleave', this.onTableHover)
     }
+    connectedCallback() {
+        super.connectedCallback()
+        this.setState({
+            tableWidth: this.table.clientWidth,
+            tableHeight: this.table.clientHeight,
+        })
+    }
+
     render(){
-        const {data, showActions, headerRow, headerCol} = this.state
+        const {
+            data, showCellActions, headerRow,
+            headerCol, tableWidth, tableHeight,
+            showTableActions
+        } = this.state
         return html`
           <div onclick="${this.onTableConfigClick}">
               <button value="header-row">Header Row?</button>
               <button value="header-col">Header Col?</button>
             </div>
           <br />
-          ${(showActions)? html`
+          <div>
+            <div style="float:left">
+              <table style="display: inline-table"
+                     onclick="${this.onTableClick}">
+                ${data.map((rows, ri)=>html`
+                <tr class="${(ri===0 && headerRow)?'header':null}">
+                    ${rows.map((col, ci)=>html`
+                      <td contenteditable="true"
+                          class="${(ci===0 && headerCol)?'header':null}">
+                        ${col}
+                      </td>
+                    `)}
+                </tr>
+              `)}
+              </table>
+            </div>
+            <div onclick="${this.onDataActionClick}"
+                 style="${`float:left;opacity: ${showTableActions? 1:0};transition: opacity .3s ease-in-out;`}">
+              <button value="add-col-end"
+                      style="${`height: ${tableHeight}px`}">+</button>
+            </div>
+          </div>
+          <div style="clear: both"></div>
+          <div onclick="${this.onDataActionClick}"
+               style="${`opacity: ${showTableActions ? 1:0}; transition: opacity .3s ease-in-out`}">
+            <button value="add-row-end" 
+                    style="${`width: ${tableWidth}px`}">+</button>
+          </div>
+          <br />
+          ${(showCellActions)? html`
               <div onclick="${this.onDataActionClick}">
                 <button value="remove-row" 
                         disabled="${!this.canDeleteRow()||null}">remove selected row</button>
@@ -84,22 +134,6 @@ class DynaTable extends BaseElement {
                 <button value="add-col-after">add col after</button>
               </div>
             `:null}
-          <br />
-          <div>
-            <table style="display: inline-table"
-                   onclick="${this.onTableClick}">
-              ${data.map((rows, ri)=>html`
-                <tr class="${(ri===0 && headerRow)?'header':null}">
-                    ${rows.map((col, ci)=>html`
-                      <td contenteditable="true"
-                          class="${(ci===0 && headerCol)?'header':null}">
-                        ${col}
-                      </td>
-                    `)}
-                </tr>
-              `)}
-            </table>
-          </div>
         `
     }
 
@@ -110,7 +144,7 @@ class DynaTable extends BaseElement {
     }
     onOutsideTableClick = () =>{
         this.setState({
-            showActions: false,
+            showCellActions: false,
             selectedCell: {
                 row: null,
                 col: null
@@ -121,12 +155,15 @@ class DynaTable extends BaseElement {
         const withinTdBoundary = e.target instanceof HTMLTableCellElement
         if(withinTdBoundary){ this.onTdClick(e) }
     }
+    onTableHover = (e) =>{
+        this.setState({ showTableActions: !this.state.showTableActions})
+    }
     onTdClick = (e) => {
         const {target} = e
         const {selectedCell} = this.state
         const tr = target.closest('tr')
         this.setState({
-            showActions: true,
+            showCellActions: true,
             selectedCell: {
                 ...selectedCell,
                 row: tr.rowIndex,
@@ -154,6 +191,10 @@ class DynaTable extends BaseElement {
             const {data, selectedCell} = this.state
             const _data = applyDataAction(data, selectedCell, actionName)
             this.setState({ data: _data })
+            this.setState({
+                tableWidth: this.table.clientWidth,
+                tableHeight: this.table.clientHeight,
+            })
         }
     }
 
